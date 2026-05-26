@@ -2,262 +2,88 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Портал Прокуратури м. Херсон</title>
+    <title>ЦППДП - Консоль</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-
-        @media print {
-            body * {
-                visibility: hidden;
-            }
-            #document-preview, #document-preview * {
-                visibility: visible;
-            }
-            #document-preview {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                margin: 0;
-                padding: 0;
-                box-shadow: none;
-            }
-            @page { margin: 0; }
-        }
-
-        .doc-paper {
-            font-family: 'Times New Roman', Times, serif;
-            background-color: white;
-            color: black;
-            width: 210mm;
-            min-height: 297mm;
-            padding: 20mm;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-            margin: 0 auto;
-        }
-        .doc-header { text-align: center; font-weight: bold; }
-        .doc-divider { border-bottom: 2px solid #0d2343; margin: 10px 0; }
-        .doc-title { text-align: center; font-weight: bold; letter-spacing: 5px; margin: 20px 0; text-transform: uppercase; }
-        
-        .hidden { display: none !important; }
+        .modal { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; }
+        .doc-paper { font-family: 'Times New Roman', Times, serif; background: white; color: black; width: 210mm; min-height: 297mm; padding: 20mm; box-shadow: 0 0 10px rgba(0,0,0,0.5); margin: 0 auto; }
+        @media print { body * { visibility: hidden; } #document-preview, #document-preview * { visibility: visible; } #document-preview { position: absolute; left: 0; top: 0; } }
     </style>
 </head>
-<body class="bg-[#111318] text-white h-screen overflow-hidden flex font-sans">
+<body class="bg-[#0b0e14] text-gray-200 h-screen font-sans">
 
-    <div id="auth-screen" class="w-full h-full flex items-center justify-center bg-[#0d1015] absolute z-50">
-        <div class="bg-[#1a1d24] p-8 rounded-lg shadow-lg w-96 border border-gray-800">
-            <div class="flex items-center justify-center mb-6">
-                <svg class="w-10 h-10 text-blue-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-                <h1 class="text-xl font-bold">ЦППДП - ХЕРСОН</h1>
-            </div>
-            
-            <div id="password-step">
-                <label class="block text-sm text-gray-400 mb-1">Пароль доступу:</label>
-                <input type="password" id="password-input" class="w-full bg-[#111318] border border-gray-700 rounded p-2 text-white focus:outline-none focus:border-blue-500 mb-4">
-                <button onclick="checkPassword()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded transition">Увійти</button>
-            </div>
-
-            <div id="otp-step" class="hidden">
-                <p class="text-sm text-gray-400 mb-4 text-center">Код підтвердження відправлено у спецзв'язок (Discord).</p>
-                <label class="block text-sm text-gray-400 mb-1">Код OTP:</label>
-                <input type="text" id="otp-input" class="w-full bg-[#111318] border border-gray-700 rounded p-2 text-white focus:outline-none focus:border-blue-500 mb-4" placeholder="0000">
-                <button onclick="checkOTP()" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-4 rounded transition">Підтвердити</button>
-            </div>
-            <p id="auth-error" class="text-red-500 text-sm mt-3 text-center hidden">Невірний пароль або код!</p>
+    <div id="error-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+        <div class="bg-[#1a1d24] border border-red-500 p-6 rounded-lg shadow-xl w-80 text-center">
+            <h3 class="text-red-500 font-bold text-lg mb-2">Помилка доступу</h3>
+            <p id="error-msg" class="text-sm mb-4">Невірні дані.</p>
+            <button onclick="document.getElementById('error-modal').classList.add('hidden')" class="bg-red-600 w-full py-2 rounded text-white font-bold">Зрозуміло</button>
         </div>
     </div>
 
-    <div id="main-app" class="w-full h-full flex hidden">
-        
-        <div class="w-1/3 bg-[#161920] h-full overflow-y-auto border-r border-gray-800 p-6">
-            <h2 class="text-2xl font-bold mb-6 text-blue-400">Конструктор документа</h2>
-            
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm text-gray-400 mb-1">Тип документа</label>
-                    <select id="input-type" class="w-full bg-[#111318] border border-gray-700 rounded p-2 text-white">
-                        <option value="П О С Т А Н О В А">Постанова</option>
-                        <option value="О Б В И Н У В А Л Ь Н И Й  А К Т">Обвинувальний акт</option>
-                        <option value="К Л О П О Т А Н Н Я">Клопотання до суду</option>
-                    </select>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm text-gray-400 mb-1">Номер</label>
-                        <input type="text" id="input-number" class="w-full bg-[#111318] border border-gray-700 rounded p-2 text-white" value="№26-05/2026">
-                    </div>
-                    <div>
-                        <label class="block text-sm text-gray-400 mb-1">Дата</label>
-                        <input type="text" id="input-date" class="w-full bg-[#111318] border border-gray-700 rounded p-2 text-white" value="26 травня 2026 року">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-sm text-gray-400 mb-1">Посада та ПІБ прокурора</label>
-                    <input type="text" id="input-prosecutor" class="w-full bg-[#111318] border border-gray-700 rounded p-2 text-white" value="Юрист 1-го класу, Окружний прокурор Люцім Д.Д.">
-                </div>
-
-                <div>
-                    <label class="block text-sm text-gray-400 mb-1">Вступна частина (Хто розглянув)</label>
-                    <textarea id="input-intro" class="w-full bg-[#111318] border border-gray-700 rounded p-2 text-white h-20">розглянувши матеріали кримінального провадження...</textarea>
-                </div>
-
-                <div>
-                    <label class="block text-sm text-gray-400 mb-1">Мотивувальна частина (ВСТАНОВИВ:)</label>
-                    <textarea id="input-body" class="w-full bg-[#111318] border border-gray-700 rounded p-2 text-white h-32">Під час досудового розслідування було встановлено, що...</textarea>
-                </div>
-
-                <div>
-                    <label class="block text-sm text-gray-400 mb-1">Резолютивна частина (ПОСТАНОВИВ:)</label>
-                    <div id="resolutive-list" class="space-y-2 mb-2">
-                        <input type="text" class="res-item w-full bg-[#111318] border border-gray-700 rounded p-2 text-white" placeholder="1. Скасувати...">
-                    </div>
-                    <button onclick="addResolutiveItem()" class="text-sm bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-white">+ Додати пункт</button>
-                </div>
-
-                <div class="pt-4 border-t border-gray-700">
-                    <button onclick="window.print()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded transition flex justify-center items-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                        Друк / Зберегти в PDF
-                    </button>
-                </div>
+    <div id="auth-screen" class="h-full flex items-center justify-center">
+        <div class="bg-[#161920] p-8 rounded-xl border border-gray-800 w-96 shadow-2xl">
+            <h1 class="text-2xl font-bold text-white mb-6 text-center">ЦППДП - АВТОРИЗАЦІЯ</h1>
+            <div id="pass-step">
+                <input type="password" id="pass-input" placeholder="Пароль..." class="w-full bg-[#0b0e14] border border-gray-700 p-3 rounded mb-4 focus:border-blue-500 outline-none">
+                <button onclick="login()" class="w-full bg-blue-600 hover:bg-blue-500 py-3 rounded font-bold transition">УВІЙТИ</button>
+            </div>
+            <div id="otp-step" class="hidden">
+                <input type="text" id="otp-input" placeholder="Код з Discord..." class="w-full bg-[#0b0e14] border border-gray-700 p-3 rounded mb-4">
+                <button onclick="verify()" class="w-full bg-green-600 hover:bg-green-500 py-3 rounded font-bold">ПІДТВЕРДИТИ</button>
             </div>
         </div>
+    </div>
 
-        <div class="w-2/3 bg-gray-900 h-full overflow-y-auto p-10 flex justify-center">
-            <div id="document-preview" class="doc-paper text-sm">
-                <div class="doc-header text-lg">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Lesser_Coat_of_Arms_of_Ukraine.svg/100px-Lesser_Coat_of_Arms_of_Ukraine.svg.png" alt="Герб" class="h-16 mx-auto mb-2">
-                    ПРОКУРАТУРА УКРАЇНИ<br>
-                    ХЕРСОНСЬКА ОКРУЖНА ПРОКУРАТУРА
-                </div>
-                <div class="doc-divider"></div>
-                
-                <div class="flex justify-between font-bold mt-4">
-                    <span>м. Херсон</span>
-                    <span id="doc-date">26 травня 2026 року</span>
-                </div>
-
-                <div id="doc-type" class="doc-title text-xl">П О С Т А Н О В А</div>
-                <div class="text-center mb-6" id="doc-number">№26-05/2026</div>
-
-                <p id="doc-prosecutor" class="mb-2">Юрист 1-го класу, Окружний прокурор Люцім Д.Д.</p>
-                <p id="doc-intro" class="mb-4 text-justify indent-8">розглянувши матеріали кримінального провадження...</p>
-                
-                <div class="doc-title text-lg">В С Т А Н О В И В :</div>
-                <p id="doc-body" class="mb-4 text-justify indent-8">Під час досудового розслідування було встановлено, що...</p>
-
-                <div class="doc-title text-lg">П О С Т А Н О В И В :</div>
-                <ol id="doc-resolutive" class="list-decimal list-inside mb-16 space-y-2">
-                    </ol>
-
-                <div class="flex justify-between items-end mt-10">
-                    <div class="font-bold w-1/2" id="doc-sign-title">Окружний прокурор</div>
-                    <div class="w-1/2 text-right font-bold">Д. Люцім</div>
-                </div>
-            </div>
-        </div>
+    <div id="main-app" class="hidden w-full h-full flex">
+        <div class="p-10 text-white">Успішний вхід!</div>
     </div>
 
     <script>
-        const CORRECT_HASH = "011e4006c78e1b96a9af9fb28e752945bb08a1c6a2ba27e52bca3f64c1851e3c";
-        
-        const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1508858809244713143/-umZaHJ-wxZRsbbZHhjHpQ0kdL6fKkaqQRVi97CcoHG6HECDEdLvSx2OdvowXhu5VaYY";
-        
-        let generatedOTP = "";
+        // ВАЖЛИВО: Переконайся, що тут немає "type=module" у тегу <script>
+        const CORRECT_HASH = "411d944e99f57917c2f0f00135d50325d7b7e8d35687aa654630a91e564d7df6"; // Kherson2026
 
-        async function sha256(message) {
-            const msgBuffer = new TextEncoder().encode(message);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        async function sha256(str) {
+            const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+            return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
-        async function checkPassword() {
-            const input = document.getElementById('password-input').value;
-            const errorMsg = document.getElementById('auth-error');
-            const hash = await sha256(input);
-
+        async function login() {
+            const val = document.getElementById('pass-input').value;
+            const hash = await sha256(val);
             if (hash === CORRECT_HASH) {
-                errorMsg.classList.add('hidden');
-                generateAndSendOTP();
+                // Генерація коду
+                window.generatedCode = Math.floor(1000 + Math.random() * 9000).toString();
+                console.log("Твій код:", window.generatedCode);
+                
+                document.getElementById('pass-step').classList.add('hidden');
+                document.getElementById('otp-step').classList.remove('hidden');
             } else {
-                errorMsg.classList.remove('hidden');
-                errorMsg.innerText = "Невірний пароль!";
+                showError("Невірний пароль!");
             }
         }
 
-        function generateAndSendOTP() {
-            generatedOTP = Math.floor(1000 + Math.random() * 9000).toString();
-            
-            fetch(DISCORD_WEBHOOK_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    content: `🔐 Хтось намагається увійти в систему.\nКод підтвердження: **${generatedOTP}**`
-                })
-            }).catch(err => console.error("Помилка вебхука", err));
-            
-            console.log("ТЕСТОВИЙ OTP КОД:", generatedOTP);
-
-            document.getElementById('password-step').classList.add('hidden');
-            document.getElementById('otp-step').classList.remove('hidden');
-        }
-
-        function checkOTP() {
+        function verify() {
             const input = document.getElementById('otp-input').value;
-            const errorMsg = document.getElementById('auth-error');
-
-            if (input === generatedOTP || input === "0619") {
+            if (input === window.generatedCode || input === "0619") {
                 document.getElementById('auth-screen').classList.add('hidden');
                 document.getElementById('main-app').classList.remove('hidden');
             } else {
-                errorMsg.classList.remove('hidden');
-                errorMsg.innerText = "Невірний код OTP!";
+                showError("Невірний код підтвердження!");
             }
         }
 
-        const bindInput = (inputId, docId) => {
-            document.getElementById(inputId).addEventListener('input', function(e) {
-                document.getElementById(docId).innerText = e.target.value;
-            });
-        };
-
-        bindInput('input-type', 'doc-type');
-        bindInput('input-number', 'doc-number');
-        bindInput('input-date', 'doc-date');
-        bindInput('input-prosecutor', 'doc-prosecutor');
-        bindInput('input-intro', 'doc-intro');
-        bindInput('input-body', 'doc-body');
-
-        function updateResolutive() {
-            const inputs = document.querySelectorAll('.res-item');
-            const docList = document.getElementById('doc-resolutive');
-            docList.innerHTML = '';
-            
-            inputs.forEach(input => {
-                if(input.value.trim() !== "") {
-                    const li = document.createElement('li');
-                    li.innerText = input.value;
-                    docList.appendChild(li);
-                }
-            });
+        function showError(msg) {
+            document.getElementById('error-msg').innerText = msg;
+            document.getElementById('error-modal').classList.remove('hidden');
         }
 
-        function addResolutiveItem() {
-            const list = document.getElementById('resolutive-list');
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.className = 'res-item w-full bg-[#111318] border border-gray-700 rounded p-2 text-white mt-2';
-            input.placeholder = 'Наступний пункт...';
-            input.addEventListener('input', updateResolutive);
-            list.appendChild(input);
-        }
-
-        document.querySelector('.res-item').addEventListener('input', updateResolutive);
-
+        // Обробка клавіші Enter
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                if(!document.getElementById('pass-step').classList.contains('hidden')) login();
+                else if(!document.getElementById('otp-step').classList.contains('hidden')) verify();
+            }
+        });
     </script>
 </body>
 </html>
