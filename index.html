@@ -6,12 +6,32 @@
     <title>ЦППДП - ХЕРСОН</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
     <style>
         @media print { 
-            body * { visibility: hidden; } 
-            #document-preview, #document-preview * { visibility: visible; } 
-            #document-preview { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 15mm; box-shadow: none; } 
-            @page { margin: 0; } 
+            body * { 
+                visibility: hidden; 
+            } 
+            #document-preview, #document-preview * { 
+                visibility: visible; 
+            } 
+            #document-preview { 
+                position: absolute; 
+                left: 0; 
+                top: 0; 
+                width: 100%; 
+                margin: 0; 
+                padding: 15mm; 
+                box-shadow: none; 
+                border: none; 
+            } 
+            @page { 
+                margin: 0; 
+            } 
+            body { 
+                background-color: white !important; 
+            } 
         }
         
         .doc-paper { 
@@ -21,22 +41,51 @@
             width: 210mm; 
             min-height: 297mm; 
             padding: 20mm; 
-            box-shadow: 0 0 15px rgba(0,0,0,0.6); 
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.6); 
             margin: 0 auto; 
-            font-size: 14pt;
+            font-size: 14pt; 
             line-height: 1.5;
+            position: relative;
         }
         
-        .doc-paragraph { text-indent: 1.5cm; text-align: justify; margin-bottom: 10px; }
-        .hidden { display: none !important; }
+        .doc-paragraph { 
+            text-indent: 1.5cm; 
+            text-align: justify; 
+            margin-bottom: 12px; 
+            white-space: pre-wrap;
+        }
         
-        input[readonly] { background-color: #0f1115; color: #6b7280; cursor: not-allowed; border-color: #1f2937; }
+        .hidden { 
+            display: none !important; 
+        }
+        
+        input[readonly] { 
+            background-color: #0f1115; 
+            color: #6b7280; 
+            cursor: not-allowed; 
+            border-color: #1f2937; 
+        }
+        
+        ::-webkit-scrollbar { 
+            width: 8px; 
+        }
+        ::-webkit-scrollbar-track { 
+            background: #0d1015; 
+        }
+        ::-webkit-scrollbar-thumb { 
+            background: #1f2937; 
+            border-radius: 4px; 
+        }
+        ::-webkit-scrollbar-thumb:hover { 
+            background: #374151; 
+        }
     </style>
 </head>
 <body class="bg-[#0d1015] text-white h-screen overflow-hidden flex font-sans">
 
     <div id="auth-screen" class="absolute inset-0 z-50 flex items-center justify-center bg-[#0d1015]">
         <div class="bg-[#161920] p-8 rounded-lg shadow-2xl w-96 border border-gray-800">
+            
             <div class="flex items-center justify-center mb-6">
                 <svg class="w-8 h-8 text-blue-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.65 2 6.32 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944zM11 14a1 1 0 11-2 0 1 1 0 012 0zm0-7a1 1 0 10-2 0v3a1 1 0 102 0V7z" clip-rule="evenodd"></path>
@@ -46,150 +95,373 @@
             
             <div id="password-step">
                 <label class="block text-sm text-gray-400 mb-2 font-medium">Пароль доступу:</label>
-                <input type="password" id="password-input" class="w-full bg-[#0a0c10] border border-gray-700 rounded-md p-3 mb-5 text-white focus:outline-none focus:border-blue-500 transition-colors" placeholder="••••••••">
+                <input type="password" id="password-input" class="w-full bg-[#0a0c10] border border-gray-700 rounded-md p-3 mb-5 text-white focus:outline-none focus:border-blue-500" placeholder="••••••••">
                 <button onclick="login()" class="w-full bg-blue-600 hover:bg-blue-500 py-3 rounded-md font-bold transition-colors shadow-lg shadow-blue-500/30">Увійти</button>
             </div>
 
             <div id="otp-step" class="hidden">
-                <p class="text-sm text-gray-400 mb-4 text-center">Код підтвердження відправлено у спецзв'язок.</p>
+                <p class="text-sm text-gray-400 mb-4 text-center">Код підтвердження відправлено у спецзв'язок (Discord).</p>
                 <input type="text" id="otp-input" class="w-full bg-[#0a0c10] border border-gray-700 rounded-md p-3 mb-5 text-white text-center tracking-widest text-lg focus:outline-none focus:border-green-500" placeholder="0 0 0 0">
                 <button onclick="verify()" class="w-full bg-green-600 hover:bg-green-500 py-3 rounded-md font-bold transition-colors shadow-lg shadow-green-500/30">Підтвердити</button>
             </div>
+            
         </div>
     </div>
 
+
     <div id="main-app" class="w-full h-full flex hidden">
         
-        <div class="w-[400px] min-w-[400px] bg-[#161920] h-full overflow-y-auto border-r border-gray-800 p-6 flex flex-col">
+        <div class="w-[480px] min-w-[480px] bg-[#161920] h-full overflow-y-auto border-r border-gray-800 p-6 flex flex-col">
+            
             <h2 class="text-xl font-bold mb-6 text-blue-400 flex items-center">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                Конструктор документа
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+                Панель керування документами
             </h2>
             
             <div class="space-y-5 flex-grow">
+                
                 <div class="p-4 bg-[#111318] rounded-lg border border-gray-800 space-y-3">
                     <div>
-                        <label class="block text-xs text-gray-500 uppercase tracking-wider mb-1">Тип документа</label>
-                        <input type="text" value="П О С Т А Н О В А" readonly class="w-full rounded p-2 text-sm font-semibold">
+                        <label class="block text-xs text-blue-400 uppercase tracking-wider mb-1 font-bold">Тип документа (Шаблон)</label>
+                        <select id="in-type" class="w-full bg-[#0a0c10] border border-gray-700 rounded p-2 text-white focus:border-blue-500 font-bold">
+                            <option value="ПОСТАНОВА">ПОСТАНОВА</option>
+                            <option value="ПОВІДОМЛЕННЯ">ПОВІДОМЛЕННЯ</option>
+                            <option value="ПРИПИС">ПРИПИС</option>
+                            <option value="ДОДАТОК">ДОДАТОК ДО МАТЕРІАЛІВ</option>
+                        </select>
                     </div>
+                    
+                    <div>
+                        <label class="block text-xs text-gray-500 uppercase tracking-wider mb-1">Про що (Підзаголовок)</label>
+                        <input type="text" id="in-subtitle" class="w-full bg-[#0a0c10] border border-gray-700 rounded p-2 text-white focus:border-blue-500 text-sm" value="про початок досудового розслідування">
+                    </div>
+
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-xs text-gray-500 uppercase tracking-wider mb-1">Місце</label>
+                            <label class="block text-xs text-gray-500 uppercase tracking-wider mb-1">Місце складання</label>
                             <input type="text" value="місто Херсон" readonly class="w-full rounded p-2 text-sm">
                         </div>
                         <div>
-                            <label class="block text-xs text-gray-500 uppercase tracking-wider mb-1">Дата</label>
-                            <input type="text" id="in-date" value="25 травня 2026 року" class="w-full bg-[#0a0c10] border border-gray-700 rounded p-2 text-sm focus:border-blue-500 text-white">
+                            <label class="block text-xs text-blue-400 uppercase tracking-wider mb-1">Дата документа</label>
+                            <input type="date" id="in-date" class="w-full bg-[#0a0c10] border border-gray-700 rounded p-2 text-sm focus:border-blue-500 text-white [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert">
                         </div>
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-sm text-gray-300 mb-1">Підзаголовок</label>
-                    <input type="text" id="in-subtitle" class="w-full bg-[#0a0c10] border border-gray-700 rounded p-2 text-white focus:border-blue-500" value="про початок досудового розслідування">
+                <div class="p-4 bg-[#111318] rounded-lg border border-gray-800 space-y-3">
+                    <label class="block text-xs text-gray-400 uppercase tracking-wider font-bold">Система кодифікації ЄРДР</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Номер ERDR</label>
+                            <input type="text" id="in-erdr" class="w-full bg-[#0a0c10] border border-gray-700 rounded p-2 text-white text-xs" value="ERDR-1779783668271">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Номер Наказу</label>
+                            <input type="text" id="in-order" class="w-full bg-[#0a0c10] border border-gray-700 rounded p-2 text-white text-xs" value="№2026-6674">
+                        </div>
+                    </div>
                 </div>
 
-                <div>
-                    <label class="block text-sm text-gray-300 mb-1">Вступна частина (Хто розглянув)</label>
-                    <textarea id="in-intro" class="w-full bg-[#0a0c10] border border-gray-700 rounded p-2 text-white h-24 focus:border-blue-500 text-sm">Прокурор Херсонської окружної прокуратури, розглянувши матеріали та повідомлення щодо вчинення кримінальних правопорушень, керуючись нормами чинного Кримінального процесуального кодексу, —</textarea>
+                <div id="dynamic-texts" class="space-y-4">
+                    
+                    <div>
+                        <label id="label-intro" class="block text-sm text-gray-300 mb-1">Вступна частина (Хто розглянув):</label>
+                        <textarea id="in-intro" class="w-full bg-[#0a0c10] border border-gray-700 rounded p-2 text-white h-24 focus:border-blue-500 text-sm">Прокурор Херсонської окружної прокуратури, розглянувши матеріали та повідомлення щодо вчинення кримінальних правопорушень, керуючись нормами чинного Кримінального процесуального кодексу, —</textarea>
+                    </div>
+
+                    <div id="wrapper-vstanovyv">
+                        <label id="label-vstanovyv" class="block text-sm text-green-400 mb-1 font-bold">ВСТАНОВИВ:</label>
+                        <textarea id="in-vstanovyv" class="w-full bg-[#0a0c10] border border-gray-700 rounded p-2 text-white h-32 focus:border-green-500 text-sm">Під час здійснення прокурорського нагляду за додержанням законів виявлено факт грубого порушення кадрової дисципліни...</textarea>
+                    </div>
+
+                    <div id="wrapper-postanovyv">
+                        <label id="label-postanovyv" class="block text-sm text-red-400 mb-1 font-bold">ПОСТАНОВИВ:</label>
+                        <textarea id="in-postanovyv" class="w-full bg-[#0a0c10] border border-gray-700 rounded p-2 text-white h-32 focus:border-red-500 text-sm">1. Розпочати досудове розслідування за вказаними фактами.&#10;2. Матеріали кримінального провадження направити за підслідністю.</textarea>
+                    </div>
+                    
                 </div>
 
-                <div>
-                    <label class="block text-sm text-gray-300 mb-1">Мотивувальна частина (ВСТАНОВИВ:)</label>
-                    <textarea id="in-body" class="w-full bg-[#0a0c10] border border-gray-700 rounded p-2 text-white h-40 focus:border-blue-500 text-sm">Під час здійснення прокурорського нагляду за додержанням законів виявлено факт грубого порушення кадрової дисципліни...</textarea>
+                <div class="p-4 bg-[#111318] rounded-lg border border-gray-800 space-y-3">
+                    <label class="block text-xs text-gray-400 uppercase tracking-wider font-bold">Службова особа & Підпис</label>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">Посада (на бланку ліворуч)</label>
+                        <input type="text" id="in-position" class="w-full bg-[#0a0c10] border border-gray-700 rounded p-2 text-white focus:border-blue-500 text-sm mb-3" value="Прокурор міста Херсон">
+                        
+                        <label class="block text-xs text-gray-500 mb-1">ПІБ (на бланку праворуч)</label>
+                        <input type="text" id="in-name" class="w-full bg-[#0a0c10] border border-gray-700 rounded p-2 text-white focus:border-blue-500 text-sm mb-3" value="Дмитро Люцим">
+                        
+                        <label class="block text-xs text-gray-400 mb-1 font-medium">Електронний підпис (PNG на прозорому тлі):</label>
+                        <input type="file" id="in-signature" accept="image/*" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer">
+                        <button onclick="clearSignature()" class="text-xs text-red-400 hover:text-red-300 mt-2 underline block">Видалити файловий підпис</button>
+                    </div>
                 </div>
+
             </div>
 
-            <div class="pt-6 mt-4 border-t border-gray-800">
-                <button onclick="window.print()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-md transition-colors flex justify-center items-center">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+            <div class="pt-4 mt-4 border-t border-gray-800">
+                <button onclick="window.print()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-md transition-colors flex justify-center items-center shadow-lg shadow-blue-600/20">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                    </svg>
                     Друк / Зберегти в PDF
                 </button>
             </div>
+            
         </div>
 
         <div class="flex-grow bg-[#0a0c10] h-full overflow-y-auto p-10 flex justify-center">
             
-            <div id="document-preview" class="doc-paper relative">
+            <div id="document-preview" class="doc-paper flex flex-col">
                 
-                <div class="text-center font-bold mb-6">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Lesser_Coat_of_Arms_of_Ukraine.svg/200px-Lesser_Coat_of_Arms_of_Ukraine.svg.png" alt="Герб України" class="h-20 mx-auto mb-3">
-                    <div class="text-lg">ПРОКУРАТУРА УКРАЇНИ</div>
-                    <div class="text-lg">Херсонська окружна прокуратура</div>
+                <div class="relative mb-8">
+                    
+                    <div class="absolute right-0 top-0 text-right w-52 text-[11pt] line-clamp-4">
+                        <div id="qrcode" class="mb-2 flex justify-end"></div>
+                        <div class="font-bold">ЄРДР СИСТЕМА</div>
+                        <div id="out-order" class="font-medium">Наказ №2026-6674</div>
+                        <div id="out-erdr" class="text-[9.5pt] text-gray-700 font-mono">ID: ERDR-1779783668271</div>
+                    </div>
+
+                    <div class="text-center font-bold">
+                        <svg class="h-16 mx-auto mb-3" viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M100 0C100 0 115 50 115 100C115 150 100 200 100 200C100 200 85 150 85 100C85 50 100 0 100 0ZM100 280C100 280 50 250 10 180C10 180 30 160 50 160C50 160 70 200 90 220C90 220 90 80 90 80C90 80 60 90 30 50C30 50 10 120 10 120C-10 80 10 10 10 10C10 10 30 20 50 20C70 20 90 60 90 60C90 60 90 20 100 0C110 20 110 60 110 60C110 60 130 20 150 20C170 20 190 10 190 10C190 10 210 80 190 120C190 120 170 50 170 50C140 90 110 80 110 80C110 80 110 220 110 220C130 200 150 160 150 160C170 160 190 180 190 180C150 250 100 280 100 280Z" fill="black"/>
+                        </svg>
+                        <div class="text-[14pt] tracking-wider">ПРОКУРАТУРА УКРАЇНИ</div>
+                        <div class="text-[14pt] font-normal">Херсонська окружна прокуратура</div>
+                    </div>
+                    
                 </div>
                 
-                <div class="text-center mb-8">
-                    <div class="font-bold text-xl tracking-[0.3em]">П О С Т А Н О В А</div>
-                    <div class="font-bold text-md" id="out-subtitle">про початок досудового розслідування</div>
+                <div class="text-center mb-6">
+                    <div class="font-bold text-[16pt] tracking-[0.3em] uppercase" id="out-type">П О С Т А Н О В А</div>
+                    <div class="font-bold text-[14pt]" id="out-subtitle">про початок досудового розслідування</div>
                 </div>
                 
-                <div class="flex justify-between mb-6">
+                <div class="flex justify-between mb-6 font-medium">
                     <span>місто Херсон</span>
                     <span id="out-date">25 травня 2026 року</span>
                 </div>
                 
-                <p class="doc-paragraph" id="out-intro">Прокурор Херсонської окружної прокуратури, розглянувши матеріали та повідомлення щодо вчинення кримінальних правопорушень, керуючись нормами чинного Кримінального процесуального кодексу, —</p>
+                <div class="flex-grow text-justify">
+                    
+                    <p class="doc-paragraph" id="out-intro">Прокурор...</p>
+                    
+                    <div id="paper-vstanovyv">
+                        <div id="header-vstanovyv" class="text-center font-bold my-4 tracking-widest">ВСТАНОВИВ:</div>
+                        <p class="doc-paragraph" id="out-vstanovyv">Текст...</p>
+                    </div>
+
+                    <div id="paper-postanovyv">
+                        <div id="header-postanovyv" class="text-center font-bold my-4 tracking-widest">ПОСТАНОВИВ:</div>
+                        <p class="doc-paragraph" id="out-postanovyv">Текст...</p>
+                    </div>
+                    
+                </div>
                 
-                <div class="text-center font-bold my-4">ВСТАНОВИВ:</div>
-                
-                <p class="doc-paragraph" id="out-body" style="white-space: pre-wrap;">Під час здійснення прокурорського нагляду за додержанням законів виявлено факт грубого порушення кадрової дисципліни...</p>
+                <div class="mt-16 flex justify-between items-end">
+                    <div class="font-bold w-1/2 text-left" id="out-position">Прокурор міста Херсон</div>
+                    
+                    <div class="w-1/2 flex justify-end items-end relative select-none">
+                        <img id="out-signature-img" class="h-24 absolute right-[180px] bottom-[-20px] hidden object-contain z-10 pointer-events-none" alt="Электронная подпись">
+                        
+                        <div id="out-signature-line" class="border-b border-black w-40 absolute right-[160px] bottom-[5px]"></div>
+                        
+                        <div class="font-bold z-20 bg-white pl-2" id="out-name">Дмитро Люцим</div>
+                    </div>
+                </div>
                 
             </div>
         </div>
+        
     </div>
 
     <script>
-
         const PASS = "Kherson2026";
         let generatedOTP = "";
 
         function login() {
-            const val = document.getElementById('password-input').value.trim();
+            const passwordField = document.getElementById('password-input');
+            const val = passwordField.value.trim();
+            
             if (val === PASS) {
                 generatedOTP = Math.floor(1000 + Math.random() * 9000).toString();
-                console.log("Код підтвердження:", generatedOTP);
+                console.log("[СПЕЦЗВ'ЯЗОК OTP]:", generatedOTP);
+                
                 document.getElementById('password-step').classList.add('hidden');
                 document.getElementById('otp-step').classList.remove('hidden');
                 document.getElementById('otp-input').focus();
             } else { 
-                alert("Невірний пароль!"); 
-                document.getElementById('password-input').value = "";
+                alert("Невірний пароль доступу!"); 
+                passwordField.value = "";
             }
         }
 
         function verify() {
-            const input = document.getElementById('otp-input').value.trim();
-            if (input === generatedOTP || input === "0619") {
+            const inputOTP = document.getElementById('otp-input').value.trim();
+            
+            if (inputOTP === generatedOTP || inputOTP === "2809") {
                 document.getElementById('auth-screen').classList.add('hidden');
                 document.getElementById('main-app').classList.remove('hidden');
-                updateDoc();
+                
+                setSystemDefaultDate();
+                updateDoc(); 
             } else { 
-                alert("Невірний код!"); 
+                alert("Невірний код підтвердження спецзв'язку!"); 
             }
         }
 
-        document.addEventListener('keypress', (e) => {
+        let qrGeneratorInstance = null;
+
+        function setSystemDefaultDate() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('in-date').value = today;
+        }
+
+        function convertDateToLegalUkrainian(dateStr) {
+            if (!dateStr) {
+                return "___ ________ 20__ року";
+            }
+            const monthsUk = [
+                'січня', 'лютого', 'березня', 'квітня', 'травня', 'червня', 
+                'липня', 'серпня', 'вересня', 'жовтня', 'листопада', 'грудня'
+            ];
+            const parsedDate = new Date(dateStr);
+            const day = parsedDate.getDate();
+            const monthText = monthsUk[parsedDate.getMonth()];
+            const year = parsedDate.getFullYear();
+            
+            return `${day} ${monthText} ${year} року`;
+        }
+
+        function updateDoc() {
+            const typeValue = document.getElementById('in-type').value;
+            
+            document.getElementById('out-type').innerText = typeValue.split('').join(' ');
+
+            const wrapVstanovyv = document.getElementById('wrapper-vstanovyv');
+            const wrapPostanovyv = document.getElementById('wrapper-postanovyv');
+            const paperVstanovyv = document.getElementById('paper-vstanovyv');
+            const paperPostanovyv = document.getElementById('paper-postanovyv');
+
+            const labelIntro = document.getElementById('label-intro');
+            const labelVstanovyv = document.getElementById('label-vstanovyv');
+            const labelPostanovyv = document.getElementById('label-postanovyv');
+            const headVstanovyv = document.getElementById('header-vstanovyv');
+            const headPostanovyv = document.getElementById('header-postanovyv');
+
+            if (typeValue === "ПОСТАНОВА") {
+                wrapVstanovyv.classList.remove('hidden');
+                wrapPostanovyv.classList.remove('hidden');
+                paperVstanovyv.classList.remove('hidden');
+                paperPostanovyv.classList.remove('hidden');
+                
+                labelIntro.innerText = "Вступна частина (Хто розглянув):";
+                labelVstanovyv.innerText = "ВСТАНОВИВ:";
+                labelPostanovyv.innerText = "ПОСТАНОВИВ:";
+                headVstanovyv.innerText = "ВСТАНОВИВ:";
+                headPostanovyv.innerText = "ПОСТАНОВИВ:";
+                
+            } else if (typeValue === "ПРИПИС") {
+                wrapVstanovyv.classList.remove('hidden');
+                wrapPostanovyv.classList.remove('hidden');
+                paperVstanovyv.classList.remove('hidden');
+                paperPostanovyv.classList.remove('hidden');
+                
+                labelIntro.innerText = "Вступна частина:";
+                labelVstanovyv.innerText = "ВСТАНОВИВ (Обґрунтування):";
+                labelPostanovyv.innerText = "ВИМАГАЮ:";
+                headVstanovyv.innerText = "ВСТАНОВИВ:";
+                headPostanovyv.innerText = "ВИМАГАЮ:";
+                
+            } else {
+                wrapVstanovyv.classList.add('hidden');
+                wrapPostanovyv.classList.add('hidden');
+                paperVstanovyv.classList.add('hidden');
+                paperPostanovyv.classList.add('hidden');
+                
+                labelIntro.innerText = "Текст документа (Основне тіло):";
+            }
+
+            document.getElementById('out-subtitle').innerText = document.getElementById('in-subtitle').value;
+            document.getElementById('out-date').innerText = convertDateToLegalUkrainian(document.getElementById('in-date').value);
+            document.getElementById('out-intro').innerText = document.getElementById('in-intro').value;
+            document.getElementById('out-vstanovyv').innerText = document.getElementById('in-vstanovyv').value;
+            document.getElementById('out-postanovyv').innerText = document.getElementById('in-postanovyv').value;
+            
+            document.getElementById('out-position').innerText = document.getElementById('in-position').value;
+            document.getElementById('out-name').innerText = document.getElementById('in-name').value;
+            document.getElementById('out-order').innerText = "Наказ " + document.getElementById('in-order').value;
+            document.getElementById('out-erdr').innerText = "ID: " + document.getElementById('in-erdr').value;
+
+            executeQRGeneration();
+        }
+
+        function executeQRGeneration() {
+            const orderId = document.getElementById('in-order').value;
+            const erdrId = document.getElementById('in-erdr').value;
+            const encryptedString = `ЦППДП ПОРТАЛ | ХЕРСОН | НАКАЗ: ${orderId} | КОД: ${erdrId}`;
+            
+            const qrContainer = document.getElementById("qrcode");
+            qrContainer.innerHTML = "";
+            
+            qrGeneratorInstance = new QRCode(qrContainer, {
+                text: encryptedString,
+                width: 75,
+                height: 75,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.M
+            });
+        }
+
+        document.getElementById('in-signature').addEventListener('change', function(event) {
+            const uploadedFile = event.target.files[0];
+            
+            if (uploadedFile) {
+                const imageReader = new FileReader();
+                
+                imageReader.onload = function(e) {
+                    const outputImage = document.getElementById('out-signature-img');
+                    outputImage.src = e.target.result;
+                    
+                    outputImage.classList.remove('hidden');
+                    document.getElementById('out-signature-line').classList.add('hidden');
+                };
+                
+                imageReader.readAsDataURL(uploadedFile);
+            }
+        });
+
+        function clearSignature() {
+            document.getElementById('in-signature').value = "";
+            document.getElementById('out-signature-img').classList.add('hidden');
+            document.getElementById('out-signature-line').classList.remove('hidden');
+        }
+
+        const supervisedInputs = [
+            'in-type', 'in-subtitle', 'in-date', 'in-erdr', 
+            'in-order', 'in-intro', 'in-vstanovyv', 
+            'in-postanovyv', 'in-position', 'in-name'
+        ];
+        
+        supervisedInputs.forEach(function(elementId) {
+            document.getElementById(elementId).addEventListener('input', updateDoc);
+        });
+
+        document.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-                if(!document.getElementById('password-step').classList.contains('hidden')) {
+                const isPassVisible = !document.getElementById('password-step').classList.contains('hidden');
+                const isOtpVisible = !document.getElementById('otp-step').classList.contains('hidden');
+                
+                if (isPassVisible) {
                     login();
-                } else if(!document.getElementById('otp-step').classList.contains('hidden')) {
+                } else if (isOtpVisible) {
                     verify();
                 }
             }
         });
-
-        const inputs = ['in-date', 'in-subtitle', 'in-intro', 'in-body'];
-        
-        inputs.forEach(id => {
-            document.getElementById(id).addEventListener('input', updateDoc);
-        });
-
-        function updateDoc() {
-            document.getElementById('out-date').innerText = document.getElementById('in-date').value;
-            document.getElementById('out-subtitle').innerText = document.getElementById('in-subtitle').value;
-            document.getElementById('out-intro').innerText = document.getElementById('in-intro').value;
-            document.getElementById('out-body').innerText = document.getElementById('in-body').value;
-        }
     </script>
 </body>
 </html>
